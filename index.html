@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#173f35" />
+  <meta name="description" content="An interactive healthcare Web GIS for Islamabad and Rawalpindi, Pakistan." />
+  <title>CareAtlas | Healthcare Web GIS</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a href="#" class="brand" aria-label="CareAtlas home">
+        <span class="brand-mark"><span>✚</span></span>
+        <span class="brand-copy">
+          <strong>CareAtlas</strong>
+          <small>HEALTHCARE INTELLIGENCE</small>
+        </span>
+      </a>
+
+      <nav class="top-nav" aria-label="Main navigation">
+        <a class="nav-link active" href="#dashboard">Explorer</a>
+        <a class="nav-link" href="#map-section">Interactive map</a>
+        <a class="nav-link" href="#about">About project</a>
+      </nav>
+
+      <div class="topbar-right">
+        <span class="live-indicator"><i></i> API CONNECTED</span>
+        <button id="refreshBtn" class="refresh-button" type="button" title="Refresh healthcare data">
+          <span aria-hidden="true">↻</span> Refresh
+        </button>
+      </div>
+    </header>
+
+    <main id="dashboard">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line"></span> YOUR CITY, YOUR HEALTH</div>
+          <h1>Healthcare, <em>mapped.</em></h1>
+          <p class="hero-description">
+            Explore healthcare facilities across Islamabad and Rawalpindi.
+            Discover hospitals, clinics, pharmacies and more through one interactive map.
+          </p>
+          <div class="hero-meta">
+            <span>⌖ Islamabad & Rawalpindi, Pakistan</span>
+            <span class="meta-divider">•</span>
+            <span>Open geographic data</span>
+          </div>
+        </div>
+
+        <div class="hero-art" aria-hidden="true">
+          <div class="art-ring ring-one"></div>
+          <div class="art-ring ring-two"></div>
+          <div class="art-cross">✚</div>
+          <span class="art-dot dot-one"></span>
+          <span class="art-dot dot-two"></span>
+          <span class="art-dot dot-three"></span>
+          <span class="art-label label-one">ISB</span>
+          <span class="art-label label-two">RWP</span>
+          <div class="art-caption">CARE WITHIN REACH</div>
+        </div>
+      </section>
+
+      <section class="stats-grid" aria-label="Healthcare statistics">
+        <article class="stat-card stat-primary">
+          <div class="stat-top">
+            <span class="stat-label">Mapped facilities</span>
+            <span class="stat-icon">⌖</span>
+          </div>
+          <div class="stat-value" id="totalCount">—</div>
+          <div class="stat-foot"><span class="stat-bullet"></span> Facilities returned by the API</div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Currently visible</span>
+            <span class="stat-icon icon-soft">◉</span>
+          </div>
+          <div class="stat-value" id="visibleCount">—</div>
+          <div class="stat-foot">Based on your search and filters</div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Facility categories</span>
+            <span class="stat-icon icon-gold">✳</span>
+          </div>
+          <div class="stat-value" id="categoryCount">5</div>
+          <div class="stat-foot">Hospitals, clinics and more</div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Study area</span>
+            <span class="stat-icon icon-soft">⌖</span>
+          </div>
+          <div class="stat-value stat-area">Twin Cities</div>
+          <div class="stat-foot">Islamabad + Rawalpindi</div>
+        </article>
+      </section>
+
+      <section id="map-section" class="workspace">
+        <aside class="sidebar">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">DISCOVER</span>
+              <h2>Find care</h2>
+            </div>
+            <span class="heading-symbol">✳</span>
+          </div>
+
+          <label class="field-label" for="searchInput">Search facilities</label>
+          <div class="search-wrap">
+            <span class="search-symbol" aria-hidden="true">⌕</span>
+            <input id="searchInput" type="search" placeholder="Name, area, address..." autocomplete="off" />
+            <button id="clearSearch" type="button" class="clear-search" aria-label="Clear search" title="Clear search">×</button>
+          </div>
+
+          <label class="field-label" for="categoryFilter">Facility type</label>
+          <div class="select-wrap">
+            <select id="categoryFilter">
+              <option value="all">All facility types</option>
+              <option value="Hospital">Hospitals</option>
+              <option value="Clinic">Clinics</option>
+              <option value="Pharmacy">Pharmacies</option>
+              <option value="Doctor">Doctors</option>
+              <option value="Dentist">Dentists</option>
+            </select>
+            <span aria-hidden="true">⌄</span>
+          </div>
+
+          <div class="directory-heading">
+            <h3>Facility directory</h3>
+            <span id="directoryCount" class="count-pill">0</span>
+          </div>
+          <p class="directory-hint">Select a facility to locate it on the map.</p>
+
+          <div id="facilityList" class="facility-list" aria-live="polite">
+            <div class="list-message">
+              <span class="loading-spinner"></span>
+              <p>Loading healthcare data...</p>
+            </div>
+          </div>
+
+          <div class="sidebar-bottom">
+            <div class="source-mini-icon">i</div>
+            <div>
+              <strong>About this data</strong>
+              <p>Community-mapped geographic information. Details may be incomplete.</p>
+            </div>
+          </div>
+        </aside>
+
+        <div class="map-panel">
+          <div class="map-toolbar">
+            <div class="map-heading">
+              <span class="map-heading-icon">⌖</span>
+              <div>
+                <h2>Facility map</h2>
+                <p>Islamabad · Rawalpindi</p>
+              </div>
+            </div>
+
+            <div class="map-actions">
+              <button id="streetBtn" class="map-control selected" type="button">Street</button>
+              <button id="satelliteBtn" class="map-control" type="button">Satellite</button>
+              <button id="locateBtn" class="icon-button" type="button" title="Return to study area" aria-label="Return to study area">⌖</button>
+            </div>
+          </div>
+
+          <div class="map-stage">
+            <div id="map" role="application" aria-label="Interactive healthcare map"></div>
+
+            <div class="map-legend">
+              <div class="legend-title">MAP LEGEND</div>
+              <div class="legend-item"><span class="legend-dot hospital-dot">✚</span> Hospital</div>
+              <div class="legend-item"><span class="legend-dot clinic-dot">+</span> Clinic</div>
+              <div class="legend-item"><span class="legend-dot pharmacy-dot">✚</span> Pharmacy</div>
+              <div class="legend-item"><span class="legend-dot doctor-dot">●</span> Doctor</div>
+              <div class="legend-item"><span class="legend-dot dentist-dot">✦</span> Dentist</div>
+            </div>
+
+            <div id="mapStatus" class="map-status" role="status">
+              <span class="loading-spinner small-spinner"></span> Connecting to open data...
+            </div>
+          </div>
+
+          <div class="map-footer">
+            <span><span class="footer-pin">⌖</span> Geographic locations are approximate where mapped as building centres.</span>
+            <span class="map-coordinates" id="mapCoordinates">33.6844° N, 73.0479° E</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="about" class="about-section">
+        <div class="about-intro">
+          <span class="section-kicker">ABOUT THE PROJECT</span>
+          <h2>Geographic data for<br /><em>better discovery.</em></h2>
+          <p>
+            CareAtlas demonstrates how an external geographic API can power a Web GIS.
+            Users can explore mapped healthcare facilities, filter results, and inspect
+            the attributes available for each location.
+          </p>
+        </div>
+
+        <div class="about-cards">
+          <article class="about-card">
+            <span class="about-icon">⌁</span>
+            <h3>Live API retrieval</h3>
+            <p>JavaScript fetch requests retrieve facility data from the OpenStreetMap Overpass API.</p>
+          </article>
+          <article class="about-card">
+            <span class="about-icon">◎</span>
+            <h3>Interactive mapping</h3>
+            <p>Leaflet displays facility locations, map layers, popups and selected locations.</p>
+          </article>
+          <article class="about-card">
+            <span class="about-icon">⌕</span>
+            <h3>Explore & filter</h3>
+            <p>Search by name or location and filter facilities by healthcare category.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="source-bar">
+        <div>
+          <span class="source-icon">↗</span>
+          <div>
+            <strong>Data source & attribution</strong>
+            <p>© OpenStreetMap contributors · Overpass API · © Esri (satellite layer)</p>
+          </div>
+        </div>
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">View attribution ↗</a>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <a href="#" class="footer-brand">CareAtlas <span>·</span> Web GIS Application</a>
+      <span>Academic project · Healthcare facility exploration</span>
+      <span>PAKISTAN <span class="footer-star">✳</span></span>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
